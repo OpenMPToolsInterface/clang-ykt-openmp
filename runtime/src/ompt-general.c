@@ -203,6 +203,16 @@ void ompt_init()
         break;
     }
 
+    const char *ompd_env_var = getenv("OMPD_STATE");
+    if (ompd_env_var && !strcmp(ompd_env_var, "enabled"))
+    {
+      fprintf(stderr,
+                  "OMPD_STATE active\n");
+      ompt_status = ompt_status_track_callback;
+      tool_setting = omp_tool_enabled;
+      __ompt_init_internal();
+    }
+    
     ompt_initialized = 1;
 }
 

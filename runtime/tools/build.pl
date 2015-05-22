@@ -65,7 +65,8 @@ my $opts = {
     "omp-version"     => { targets => "rtl",               base => 0, parms => { 40      => "", 30        => "", 41 => "*"   }, suffix => sub { $_[ 0 ]; } },
     "coverage"        => { targets => "rtl",               base => 0, parms => { off     => "*", on        => ""              }, suffix => sub { $_[ 0 ] eq "on" ? "c1" : "c0"; } },
     "stats"           => { targets => "rtl",               base => 0, parms => { off     => "*", on        => ""              }, suffix => sub { $_[ 0 ] eq "on" ? "s1" : "s0"; } },
-    "ompt-support"    => { targets => "rtl",               base => 0, parms => { off     => "*", on        => ""              }, suffix => sub { $_[ 0 ] eq "on" ? "ompt" : "" } },
+    "ompd-support"    => { targets => "rtl",               base => 0, parms => { off     => "", on        => "*"              }, suffix => sub { $_[ 0 ] eq "on" ? "ompd" : "" } },
+    "ompt-support"    => { targets => "rtl",               base => 0, parms => { off     => "", on        => "*"              }, suffix => sub { $_[ 0 ] eq "on" ? "ompt" : "" } },
     "ompt-blame"      => { targets => "rtl",               base => 0, parms => { off     => "",  on        => "*"             }, suffix => sub { $_[ 0 ] eq "on" ? "" : "no-ompt-blame" } },
     "ompt-trace"      => { targets => "rtl",               base => 0, parms => { off     => "",  on        => "*"             }, suffix => sub { $_[ 0 ] eq "on" ? "" : "no-ompt-trace" } },
 };
@@ -73,7 +74,7 @@ my $synonyms = {
     "debug" => [ qw{ dbg debg } ],
 };
 # This array specifies order of options to process, so it cannot be initialized with keys( %$opts ).
-my @all_opts   = qw{ target version lib-type link-type mode omp-version coverage stats ompt-support ompt-blame ompt-trace };
+my @all_opts   = qw{ target version lib-type link-type mode omp-version coverage stats ompd-support ompt-support ompt-blame ompt-trace };
 # This is the list of base options.
 my @base_opts  = grep( $opts->{ $_ }->{ base } == 1, @all_opts );
 # This is the list of extra options.
@@ -274,6 +275,7 @@ sub enqueue_jobs($$@) {
                     "VERSION=" . $set->{ version },
                     "suffix=" . $suf,
                     "stats=" . $set->{ stats },
+                    "OMPD_SUPPORT=" . $set->{ "ompd-support" },
                     "OMPT_SUPPORT=" . $set->{ "ompt-support" },
                     "OMPT_BLAME=" . $set->{ "ompt-blame" },
                     "OMPT_TRACE=" . $set->{ "ompt-trace" },

@@ -94,6 +94,7 @@ define curr_config
     CXXFLAGS=$(subst $(space),_,$(CXXFLAGS))
     FFLAGS=$(subst $(space),_,$(FFLAGS))
     LDFLAGS=$(subst $(space),_,$(LDFLAGS))
+    OMPD_SUPPORT=$(OMPD_SUPPORT)
     OMPT_SUPPORT=$(OMPT_SUPPORT)
     OMPT_BLAME=$(OMPT_BLAME)
     OMPT_TRACE=$(OMPT_TRACE)
@@ -709,12 +710,19 @@ ifeq "$(OMPT_SUPPORT)" "on"
     endif
 endif
 
+ifeq "$(OMPD_SUPPORT)" "on"
+    ompd_items = ompd-specific
+    cpp-flags += -D OMPD_SUPPORT=1
+
+endif
+
 # Library files. These files participate in all kinds of library.
 lib_c_items :=      \
     kmp_ftn_cdecl   \
     kmp_ftn_extra   \
     kmp_version     \
     $(ompt_items)   \
+    $(ompd_items)   \
     $(empty)
 lib_cpp_items :=
 lib_asm_items :=

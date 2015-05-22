@@ -29,6 +29,9 @@
 #if OMPT_SUPPORT
 #include "ompt-specific.h"
 #endif
+#if OMPD_SUPPORT
+#include "ompd-specific.h"
+#endif
 
 /* these are temporary issues to be dealt with */
 #define KMP_USE_PRCTL 0
@@ -6565,6 +6568,9 @@ __kmp_do_serial_initialize( void )
 #if OMPT_SUPPORT
     ompt_init();
 #endif
+#if OMPD_SUPPORT
+    ompd_init();
+#endif
 }
 
 void
@@ -6712,6 +6718,9 @@ __kmp_middle_initialize( void )
 #if OMPT_SUPPORT
     ompt_init();
 #endif
+#if OMPD_SUPPORT
+    ompd_init();
+#endif
 }
 
 void
@@ -6783,6 +6792,9 @@ __kmp_parallel_initialize( void )
     __kmp_release_bootstrap_lock( &__kmp_initz_lock );
 #if OMPT_SUPPORT
     ompt_init();
+#endif
+#if OMPD_SUPPORT
+    ompd_init();
 #endif
 }
 
