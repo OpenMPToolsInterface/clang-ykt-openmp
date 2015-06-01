@@ -105,6 +105,9 @@ set(ompt_support    false         CACHE BOOL   "OMPT-support?"                  
 set(ompt_blame      true          CACHE BOOL   "OMPT-blame?"                                            )
 set(ompt_trace      true          CACHE BOOL   "OMPT-trace?"                                            )
 
+# OMPD-support
+set(ompd_support    false         CACHE BOOL   "OMPD-support?"                                          )
+
 # User specified flags.  These are appended to the predetermined flags found in CommonFlags.cmake and ${CMAKE_C_COMPILER_ID}/*Flags.cmake (e.g., GNU/CFlags.cmake)
 set(LIBIOMP_CFLAGS      "" CACHE STRING "Appended user specified C compiler flags."             )
 set(LIBIOMP_CXXFLAGS    "" CACHE STRING "Appended user specified C++ compiler flags."           )
@@ -240,6 +243,12 @@ if(NOT "${ompt_trace}") # string "on" or "ON" is seen as boolean TRUE
     set(OMPT_TRACE FALSE)
 endif()
 
+# OMPD-support
+set(OMPD_SUPPORT FALSE)
+if("${ompd_support}") # string "on" or "ON" is seen as boolean TRUE
+    set(OMPD_SUPPORT TRUE)
+endif()
+
 # Include itt notify interface? Right now, always.
 set(USE_ITT_NOTIFY TRUE)
 
@@ -328,6 +337,9 @@ if(${OMPT_SUPPORT})
     if(NOT ${OMPT_TRACE})
         set(suffix "${suffix}.no-ompt-trace")
     endif()
+endif()
+if(${OMPD_SUPPORT})
+    set(suffix "${suffix}.ompd")
 endif()
 
 ####################################
@@ -905,6 +917,7 @@ if(${LIBIOMP_STANDALONE_BUILD})
         say("LIBIOMP: OMPT-blame           -- ${ompt_blame}")
         say("LIBIOMP: OMPT-trace           -- ${ompt_trace}")
     endif()
+    say("LIBIOMP: OMPD-support         -- ${ompd_support}")
     say("LIBIOMP: Use build.pl rules   -- ${USE_BUILDPL_RULES}")
     say("LIBIOMP: Adaptive locks       -- ${USE_ADAPTIVE_LOCKS}")
     say("LIBIOMP: Use predefined linker flags      -- ${USE_PREDEFINED_LINKER_FLAGS}")
