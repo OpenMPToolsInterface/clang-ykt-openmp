@@ -115,6 +115,11 @@ function(append_cpp_flags input_cpp_flags)
     else()
         append_definitions("-D OMPT_TRACE=0")
     endif()
+    if(${OMPD_SUPPORT})
+        append_definitions("-D OMPD_SUPPORT=1")
+    else()
+        append_definitions("-D OMPD_SUPPORT=0")
+    endif()
 
     # OpenMP version flags
     set(have_omp_50 0)
