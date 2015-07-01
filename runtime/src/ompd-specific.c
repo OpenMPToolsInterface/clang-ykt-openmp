@@ -1,5 +1,7 @@
 #include "ompd-specific.h"
 
+#ifdef OMPD_SUPPORT
+
 /**
  * Declaration of symbols to hold struct size and member offset information
  */
@@ -16,6 +18,8 @@ OMPD_FOREACH_BITFIELD(ompd_declare_bitfield)
 OMPD_FOREACH_SIZEOF(ompd_declare_sizeof)
 #undef ompd_declare_sizeof
 
+const char * * ompd_dll_locations=NULL;
+const char * ompd_my_dll_locations[2] = {"libompd_intel.so",NULL};
 void ompd_init()
 {
   
@@ -43,4 +47,15 @@ OMPD_FOREACH_BITFIELD(ompd_init_bitfield)
 OMPD_FOREACH_SIZEOF(ompd_init_sizeof)
 #undef ompd_init_sizeof
 
+  ompd_dll_locations=ompd_my_dll_locations;
+  ompd_dll_locations_valid ();
+
 }
+
+void ompd_dll_locations_valid ( void ){
+  /* naive way of implementing hard to opt-out empty function 
+     we might want to use a separate object file? */
+  asm ("");
+}
+
+#endif /* OMPD_SUPPORT */

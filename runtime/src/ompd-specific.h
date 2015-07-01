@@ -4,7 +4,15 @@
 #ifndef __OMPD_SPECIFIC_H__
 #define __OMPD_SPECIFIC_H__
 
+#ifdef OMPD_SUPPORT
+
 void ompd_init();
+extern const char * * ompd_dll_locations;
+
+#ifdef  __cplusplus
+extern "C" 
+#endif
+void ompd_dll_locations_valid ( void );
 
 #define OMPD_FOREACH_ACCESS(OMPD_ACCESS) \
 OMPD_ACCESS(kmp_base_info_t,      th_current_task) \
@@ -67,6 +75,6 @@ OMPD_SIZEOF(kmp_info_t) \
 OMPD_SIZEOF(kmp_taskdata_t) \
 OMPD_SIZEOF(kmp_tasking_flags_t) \
 
-
+#endif /* OMPD_SUPPORT */
 #endif
 
