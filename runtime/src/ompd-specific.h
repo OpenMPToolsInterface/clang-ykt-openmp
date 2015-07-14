@@ -25,6 +25,7 @@ OMPD_ACCESS(kmp_base_root_t,      r_in_parallel) \
 OMPD_ACCESS(kmp_base_team_t,      ompt_team_info) \
 OMPD_ACCESS(kmp_base_team_t,      t_active_level) \
 OMPD_ACCESS(kmp_base_team_t,      t_implicit_task_taskdata) \
+OMPD_ACCESS(kmp_base_team_t,      t_master_tid) \
 OMPD_ACCESS(kmp_base_team_t,      t_nproc) \
 OMPD_ACCESS(kmp_base_team_t,      t_level) \
 OMPD_ACCESS(kmp_base_team_t,      t_parent) \
@@ -51,6 +52,7 @@ OMPD_ACCESS(kmp_taskdata_t,       ompt_task_info) \
 OMPD_ACCESS(kmp_taskdata_t,       td_flags) \
 OMPD_ACCESS(kmp_taskdata_t,       td_icvs) \
 OMPD_ACCESS(kmp_taskdata_t,       td_parent) \
+OMPD_ACCESS(kmp_taskdata_t,       td_team) \
 \
 OMPD_ACCESS(kmp_team_p,           t) \
 \
@@ -68,6 +70,16 @@ OMPD_ACCESS(ompt_frame_t,         exit_runtime_frame) \
 
 #define OMPD_FOREACH_BITFIELD(OMPD_BITFIELD) \
 OMPD_BITFIELD(kmp_tasking_flags_t,  final) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  tiedness) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  tasktype) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  task_serial) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  tasking_ser) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  team_serial) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  started) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  executing) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  complete) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  freed) \
+OMPD_BITFIELD(kmp_tasking_flags_t,  native) \
 
 
 #define OMPD_FOREACH_SIZEOF(OMPD_SIZEOF) \
