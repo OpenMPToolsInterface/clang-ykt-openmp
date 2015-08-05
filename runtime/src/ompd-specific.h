@@ -10,9 +10,19 @@ void ompd_init();
 extern const char * * ompd_dll_locations;
 
 #ifdef  __cplusplus
-extern "C" 
+extern "C" {
 #endif
 void ompd_dll_locations_valid ( void );
+void ompd_bp_parallel_begin ( void );
+void ompd_bp_parallel_end ( void );
+void ompd_bp_task_begin ( void );
+void ompd_bp_task_end ( void );
+#ifdef  __cplusplus
+} /* extern "C" */
+#endif
+
+extern int ompd_state;
+#define OMPD_ENABLE_BP 0x1
 
 #define OMPD_FOREACH_ACCESS(OMPD_ACCESS) \
 OMPD_ACCESS(kmp_base_info_t,      th_current_task) \
@@ -74,6 +84,7 @@ OMPD_BITFIELD(kmp_tasking_flags_t,  final) \
 OMPD_SIZEOF(kmp_info_t) \
 OMPD_SIZEOF(kmp_taskdata_t) \
 OMPD_SIZEOF(kmp_tasking_flags_t) \
+
 
 #endif /* OMPD_SUPPORT */
 #endif

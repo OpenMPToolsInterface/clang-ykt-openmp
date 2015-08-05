@@ -1144,6 +1144,10 @@ __kmp_invoke_task( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t * current_ta
     //
     if (!discard) {
 #endif // OMP_40_ENABLED
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_task_begin ();
+#endif
 #ifdef KMP_GOMP_COMPAT
         if (taskdata->td_flags.native) {
             ((void (*)(void *))(*(task->routine)))(task->shareds);

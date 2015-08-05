@@ -1620,6 +1620,10 @@ __kmp_fork_call(
 #endif
 
             KMP_TIME_BLOCK(OMP_work);
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_parallel_begin ();
+#endif
             __kmp_invoke_microtask( microtask, gtid, 0, argc, parent_team->t.t_argv
 #if OMPT_SUPPORT
                 , exit_runtime_p
@@ -1649,6 +1653,10 @@ __kmp_fork_call(
                 }
                 master_th->th.ompt_thread_info.state = ompt_state_overhead;
             }
+#endif
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_parallel_end ();
 #endif
             return TRUE;
         }

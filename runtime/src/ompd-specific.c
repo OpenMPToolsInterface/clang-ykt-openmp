@@ -20,8 +20,17 @@ OMPD_FOREACH_SIZEOF(ompd_declare_sizeof)
 
 const char * * ompd_dll_locations=NULL;
 const char * ompd_my_dll_locations[2] = {"libompd_intel.so",NULL};
+int ompd_state=0;
+
+extern void __ompt_init_internal(void);
+
 void ompd_init()
 {
+  
+static int ompd_initialized = 0;
+
+if (ompd_initialized)
+  return;
   
 /**
  * Calculate member offsets for structs and unions
@@ -50,6 +59,26 @@ OMPD_FOREACH_SIZEOF(ompd_init_sizeof)
   ompd_dll_locations=ompd_my_dll_locations;
   ompd_dll_locations_valid ();
 
+  const char *ompd_env_var = getenv("OMP_OMPD");
+  if (ompd_env_var && !strcmp(ompd_env_var, "on"))
+  {
+    fprintf(stderr,
+                "OMP_OMPD active\n");
+    ompt_status = ompt_status_track_callback;
+    ompd_state |= OMPD_ENABLE_BP;
+    __ompt_init_internal();
+  }
+    
+  ompd_initialized = 1;
+}
+
+void omp_ompd_enable ( void )
+{
+    fprintf(stderr,
+                "OMP_OMPD active\n");
+    ompt_status = ompt_status_track_callback;
+    ompd_state |= OMPD_ENABLE_BP;
+    __ompt_init_internal();
 }
 
 void ompd_dll_locations_valid ( void ){
@@ -57,5 +86,27 @@ void ompd_dll_locations_valid ( void ){
      we might want to use a separate object file? */
   asm ("");
 }
+
+void ompd_bp_parallel_begin ( void ){
+  /* naive way of implementing hard to opt-out empty function 
+     we might want to use a separate object file? */
+  asm ("");
+}
+void ompd_bp_parallel_end ( void ){
+  /* naive way of implementing hard to opt-out empty function 
+     we might want to use a separate object file? */
+  asm ("");
+}
+void ompd_bp_task_begin ( void ){
+  /* naive way of implementing hard to opt-out empty function 
+     we might want to use a separate object file? */
+  asm ("");
+}
+void ompd_bp_task_end ( void ){
+  /* naive way of implementing hard to opt-out empty function 
+     we might want to use a separate object file? */
+  asm ("");
+}
+
 
 #endif /* OMPD_SUPPORT */
