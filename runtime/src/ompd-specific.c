@@ -36,7 +36,7 @@ if (ompd_initialized)
  * Create bit mask for bitfield access
  */
 
-#define ompd_init_bitfield(t,m) ompd_bitfield__##t##__##m=0; ((t*)(&ompd_bitfield__##t##__##m))->m = 1; 
+#define ompd_init_bitfield(t,m) ompd_bitfield__##t##__##m=0; ((t*)(&ompd_bitfield__##t##__##m))->m = -1; 
 OMPD_FOREACH_BITFIELD(ompd_init_bitfield)
 #undef ompd_init_bitfield
 

@@ -96,6 +96,7 @@ OMPD_BITFIELD(kmp_tasking_flags_t,  native) \
 OMPD_SIZEOF(kmp_info_t) \
 OMPD_SIZEOF(kmp_taskdata_t) \
 OMPD_SIZEOF(kmp_tasking_flags_t) \
+OMPD_SIZEOF(kmp_thread_t) \
 
 
 #endif /* OMPD_SUPPORT */
