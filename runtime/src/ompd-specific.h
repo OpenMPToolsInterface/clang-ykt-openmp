@@ -8,6 +8,7 @@
 
 void ompd_init();
 extern const char * * ompd_dll_locations;
+extern int ompd_rtl_version;
 
 #ifdef  __cplusplus
 extern "C" {
@@ -97,6 +98,11 @@ OMPD_SIZEOF(kmp_info_t) \
 OMPD_SIZEOF(kmp_taskdata_t) \
 OMPD_SIZEOF(kmp_tasking_flags_t) \
 OMPD_SIZEOF(kmp_thread_t) \
+OMPD_SIZEOF(ompt_parallel_id_t) \
+OMPD_SIZEOF(ompt_task_id_t) \
+OMPD_SIZEOF(__kmp_avail_proc) \
+OMPD_SIZEOF(__kmp_max_nth) \
+OMPD_SIZEOF(__kmp_gtid) \
 
 
 #endif /* OMPD_SUPPORT */
