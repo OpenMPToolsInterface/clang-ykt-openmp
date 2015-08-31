@@ -24,6 +24,8 @@ int ompd_state=0;
 
 extern void __ompt_init_internal(void);
 
+int ompd_rtl_version = 3;
+
 void ompd_init()
 {
   
@@ -44,7 +46,7 @@ OMPD_FOREACH_ACCESS(ompd_init_access)
  * Create bit mask for bitfield access
  */
 
-#define ompd_init_bitfield(t,m) ompd_bitfield__##t##__##m=0; ((t*)(&ompd_bitfield__##t##__##m))->m = -1; 
+#define ompd_init_bitfield(t,m) ompd_bitfield__##t##__##m=0; ((t*)(&ompd_bitfield__##t##__##m))->m = 1; 
 OMPD_FOREACH_BITFIELD(ompd_init_bitfield)
 #undef ompd_init_bitfield
 
