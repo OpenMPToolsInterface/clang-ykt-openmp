@@ -69,8 +69,10 @@ OMPD_ACCESS(kmp_team_p,           t) \
 \
 OMPD_ACCESS(ompt_task_info_t,     frame) \
 OMPD_ACCESS(ompt_task_info_t,     task_id) \
+OMPD_ACCESS(ompt_task_info_t,     function) \
 \
 OMPD_ACCESS(ompt_team_info_t,     parallel_id) \
+OMPD_ACCESS(ompt_team_info_t,     microtask) \
 \
 OMPD_ACCESS(ompt_thread_info_t,   state) \
 OMPD_ACCESS(ompt_thread_info_t,   wait_id) \

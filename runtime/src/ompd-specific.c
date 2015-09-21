@@ -24,7 +24,7 @@ int ompd_state=0;
 
 extern void __ompt_init_internal(void);
 
-int ompd_rtl_version = 3;
+int ompd_rtl_version = 4;
 
 void ompd_init()
 {
