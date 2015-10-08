@@ -17,6 +17,8 @@
 #ifndef KMP_H
 #define KMP_H
 
+#include "kmp_config.h"
+
 /* #define BUILD_PARALLEL_ORDERED 1 */
 
 /* This fix replaces gettimeofday with clock_gettime for better scalability on
@@ -86,17 +88,12 @@ class kmp_stats_list;
 #include "kmp_version.h"
 #include "kmp_debug.h"
 #include "kmp_lock.h"
+#if USE_DEBUGGER
+#include "kmp_debugger.h"
+#endif
 #include "kmp_i18n.h"
 
-#define KMP_HANDLE_SIGNALS (KMP_OS_LINUX || KMP_OS_FREEBSD || KMP_OS_WINDOWS || KMP_OS_DARWIN)
-
-#ifdef KMP_SETVERSION
-/*  from factory/Include, to get VERSION_STRING embedded for 'what'  */
-#include "kaiconfig.h"
-#include "eye.h"
-#include "own.h"
-#include "setversion.h"
-#endif
+#define KMP_HANDLE_SIGNALS (KMP_OS_UNIX || KMP_OS_WINDOWS)
 
 #include "kmp_wrapper_malloc.h"
 #if KMP_OS_UNIX
@@ -161,16 +158,8 @@ class kmp_stats_list;
 // #define USE_QUEUING_LOCK_FOR_BGET
 // #endif
 
-#ifndef NSEC_PER_SEC
-# define NSEC_PER_SEC 1000000000L
-#endif
-
-#ifndef USEC_PER_SEC
-# define USEC_PER_SEC 1000000L
-#endif
-
-// For error messages
-#define KMP_IOMP_NAME       "Intel(R) OMP"
+#define KMP_NSEC_PER_SEC 1000000000L
+#define KMP_USEC_PER_SEC 1000000L
 
 /*!
 @ingroup BASIC_TYPES
@@ -994,6 +983,10 @@ extern int __kmp_place_core_offset;
 /* TODO: tune for KMP_OS_FREEBSD */
 #  define KMP_INIT_WAIT  1024U          /* initial number of spin-tests   */
 #  define KMP_NEXT_WAIT   512U          /* susequent number of spin-tests */
+#elif KMP_OS_NETBSD
+/* TODO: tune for KMP_OS_NETBSD */
+#  define KMP_INIT_WAIT  1024U          /* initial number of spin-tests   */
+#  define KMP_NEXT_WAIT   512U          /* susequent number of spin-tests */
 #endif
 
 #if KMP_ARCH_X86 || KMP_ARCH_X86_64
@@ -1664,7 +1657,7 @@ typedef struct KMP_ALIGN_CACHE kmp_bstate {
     kmp_uint32 *skip_per_level;
     kmp_uint32 my_level;
     kmp_int32 parent_tid;
-    kmp_uint32 old_tid;
+    kmp_int32 old_tid;
     kmp_uint32 depth;
     struct kmp_bstate *parent_bar;
     kmp_team_t *team;
@@ -1675,6 +1668,11 @@ typedef struct KMP_ALIGN_CACHE kmp_bstate {
     kmp_uint8 offset;
     kmp_uint8 wait_flag;
     kmp_uint8 use_oncore_barrier;
+#if USE_DEBUGGER
+    // The following field is intended for the debugger solely. Only the worker thread itself accesses this
+    // field: the worker increases it by 1 when it arrives to a barrier.
+    KMP_ALIGN_CACHE kmp_uint b_worker_arrived;
+#endif /* USE_DEBUGGER */
 } kmp_bstate_t;
 
 union KMP_ALIGN_CACHE kmp_barrier_union {
@@ -1690,7 +1688,14 @@ union KMP_ALIGN_CACHE kmp_barrier_team_union {
     double       b_align;        /* use worst case alignment */
     char         b_pad[ CACHE_LINE ];
     struct {
-        kmp_uint     b_arrived;       /* STATE => task reached synch point. */
+        kmp_uint64   b_arrived;       /* STATE => task reached synch point. */
+#if USE_DEBUGGER
+        // The following two fields are indended for the debugger solely. Only master of the team accesses
+        // these fields: the first one is increased by 1 when master arrives to a barrier, the
+        // second one is increased by one when all the threads arrived.
+        kmp_uint     b_master_arrived;
+        kmp_uint     b_team_arrived;
+#endif
     };
 };
 
@@ -2549,7 +2554,7 @@ extern char const   *__kmp_barrier_pattern_name        [ bp_last_bar ];
 
 /* Global Locks */
 extern kmp_bootstrap_lock_t __kmp_initz_lock;     /* control initialization */
-extern kmp_bootstrap_lock_t __kmp_forkjoin_lock;  /* control fork/join access and load calculation if rml is used*/
+extern kmp_bootstrap_lock_t __kmp_forkjoin_lock;  /* control fork/join access */
 extern kmp_bootstrap_lock_t __kmp_exit_lock;      /* exit() is not always thread-safe */
 extern kmp_bootstrap_lock_t __kmp_monitor_lock;   /* control monitor thread creation */
 extern kmp_bootstrap_lock_t __kmp_tp_cached_lock; /* used for the hack to allow threadprivate cache and __kmp_threads expansion to co-exist */
@@ -2730,12 +2735,22 @@ extern kmp_info_t __kmp_monitor;
 extern volatile kmp_uint32 __kmp_team_counter;      // Used by Debugging Support Library.
 extern volatile kmp_uint32 __kmp_task_counter;      // Used by Debugging Support Library.
 
+#if USE_DEBUGGER
+
+#define _KMP_GEN_ID( counter )                                         \
+    (                                                                  \
+        __kmp_debugging                                                \
+        ?                                                              \
+        KMP_TEST_THEN_INC32( (volatile kmp_int32 *) & counter ) + 1    \
+        :                                                              \
+        ~ 0                                                            \
+    )
+#else
 #define _KMP_GEN_ID( counter )                                         \
     (                                                                  \
         ~ 0                                                            \
     )
-
-
+#endif /* USE_DEBUGGER */
 
 #define KMP_GEN_TASK_ID()    _KMP_GEN_ID( __kmp_task_counter )
 #define KMP_GEN_TEAM_ID()    _KMP_GEN_ID( __kmp_team_counter )
@@ -2977,6 +2992,7 @@ extern int __kmp_aux_get_affinity_mask_proc(int proc, void **mask);
 extern void __kmp_balanced_affinity( int tid, int team_size );
 #endif /* KMP_AFFINITY_SUPPORTED */
 
+extern void __kmp_cleanup_hierarchy();
 extern void __kmp_get_hierarchy(kmp_uint32 nproc, kmp_bstate_t *thr_bar);
 
 #if KMP_OS_LINUX && (KMP_ARCH_X86 || KMP_ARCH_X86_64 || KMP_ARCH_ARM || KMP_ARCH_AARCH64)
@@ -3096,6 +3112,9 @@ extern int __kmp_fork_call( ident_t *loc, int gtid, enum fork_context_e fork_con
                              );
 
 extern void __kmp_join_call( ident_t *loc, int gtid
+#if OMPT_SUPPORT
+                           , enum fork_context_e fork_context
+#endif
 #if OMP_40_ENABLED
                            , int exit_teams = 0
 #endif

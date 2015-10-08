@@ -1315,8 +1315,7 @@ __kmp_acquire_queuing_lock_timed_template( kmp_queuing_lock_t *lck,
 #endif
 
 #if OMPT_SUPPORT
-                    if ((ompt_status & ompt_status_track) &&
-                        prev_state != ompt_state_undefined) {
+                    if (ompt_enabled && prev_state != ompt_state_undefined) {
                         /* change the state before clearing wait_id */
                         this_thr->th.ompt_thread_info.state = prev_state;
                         this_thr->th.ompt_thread_info.wait_id = 0;
@@ -1332,8 +1331,7 @@ __kmp_acquire_queuing_lock_timed_template( kmp_queuing_lock_t *lck,
         }
 
 #if OMPT_SUPPORT
-        if ((ompt_status & ompt_status_track) &&
-            prev_state == ompt_state_undefined) {
+        if (ompt_enabled && prev_state == ompt_state_undefined) {
             /* this thread will spin; set wait_id before entering wait state */
             prev_state = this_thr->th.ompt_thread_info.state;
             this_thr->th.ompt_thread_info.wait_id = (uint64_t) lck;
@@ -3870,7 +3868,6 @@ __kmp_lock_table_insert( kmp_user_lock_p lck )
     if ( __kmp_user_lock_table.used >= __kmp_user_lock_table.allocated ) {
         kmp_lock_index_t size;
         kmp_user_lock_p *table;
-        kmp_lock_index_t i;
         // Reallocate lock table.
         if ( __kmp_user_lock_table.allocated == 0 ) {
             size = 1024;
@@ -3881,7 +3878,7 @@ __kmp_lock_table_insert( kmp_user_lock_p lck )
         table = (kmp_user_lock_p *)__kmp_allocate( sizeof( kmp_user_lock_p ) * size );
         KMP_MEMCPY( table + 1, __kmp_user_lock_table.table + 1, sizeof( kmp_user_lock_p ) * ( __kmp_user_lock_table.used - 1 ) );
         table[ 0 ] = (kmp_user_lock_p)__kmp_user_lock_table.table;
-            // We cannot free the previos table now, sinse it may be in use by other
+            // We cannot free the previous table now, since it may be in use by other
             // threads. So save the pointer to the previous table in in the first element of the
             // new table. All the tables will be organized into a list, and could be freed when
             // library shutting down.
@@ -3979,8 +3976,6 @@ __kmp_user_lock_allocate( void **user_lock, kmp_int32 gtid,
 void
 __kmp_user_lock_free( void **user_lock, kmp_int32 gtid, kmp_user_lock_p lck )
 {
-    kmp_lock_pool_t * lock_pool;
-
     KMP_DEBUG_ASSERT( user_lock != NULL );
     KMP_DEBUG_ASSERT( lck != NULL );
 
