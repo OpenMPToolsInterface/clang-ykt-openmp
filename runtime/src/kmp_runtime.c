@@ -6635,15 +6635,9 @@ __kmp_do_serial_initialize( void )
     KMP_MB();
 
     KA_TRACE( 10, ("__kmp_do_serial_initialize: exit\n" ) );
-<<<<<<< HEAD
-#if OMPT_SUPPORT
-    ompt_init();
-#endif
 #if OMPD_SUPPORT
     ompd_init();
 #endif
-=======
->>>>>>> master
 }
 
 void
@@ -6788,15 +6782,6 @@ __kmp_middle_initialize( void )
     }
     __kmp_do_middle_initialize();
     __kmp_release_bootstrap_lock( &__kmp_initz_lock );
-<<<<<<< HEAD
-#if OMPT_SUPPORT
-    ompt_init();
-#endif
-#if OMPD_SUPPORT
-    ompd_init();
-#endif
-=======
->>>>>>> master
 }
 
 void
@@ -6866,15 +6851,6 @@ __kmp_parallel_initialize( void )
     KA_TRACE( 10, ("__kmp_parallel_initialize: exit\n" ) );
 
     __kmp_release_bootstrap_lock( &__kmp_initz_lock );
-<<<<<<< HEAD
-#if OMPT_SUPPORT
-    ompt_init();
-#endif
-#if OMPD_SUPPORT
-    ompd_init();
-#endif
-=======
->>>>>>> master
 }
 
 

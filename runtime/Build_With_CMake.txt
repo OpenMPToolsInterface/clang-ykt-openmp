@@ -153,6 +153,9 @@ Should OMPT blame functionality be included in the build?
 -DLIBOMP_OMPT_TRACE=on|off
 Should OMPT trace functionality be included in the build?
 
+-DLIBOMP_OMPD_SUPPORT=off|on
+Should OMPD support be included in the build? (Not supported on Windows)
+
 -DLIBOMP_STATS=off|on
 Should include stats-gathering code be included in the build?
 
