@@ -161,7 +161,8 @@ void ompt_post_init()
     // Initialize the tool if so indicated.
     //--------------------------------------------------
     if (ompt_enabled) {
-        ompt_initialize_fn(ompt_fn_lookup, ompt_get_runtime_version(), 
+        if (ompt_initialize_fn)
+            ompt_initialize_fn(ompt_fn_lookup, ompt_get_runtime_version(), 
                            OMPT_VERSION);
 
         ompt_thread_t *root_thread = ompt_get_thread();

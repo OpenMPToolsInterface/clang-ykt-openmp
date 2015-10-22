@@ -6390,6 +6390,9 @@ __kmp_do_serial_initialize( void )
 #if OMPT_SUPPORT
     ompt_pre_init();
 #endif
+#if OMPD_SUPPORT
+    ompd_init();
+#endif
 
     __kmp_validate_locks();
 
@@ -6635,9 +6638,6 @@ __kmp_do_serial_initialize( void )
     KMP_MB();
 
     KA_TRACE( 10, ("__kmp_do_serial_initialize: exit\n" ) );
-#if OMPD_SUPPORT
-    ompd_init();
-#endif
 }
 
 void
