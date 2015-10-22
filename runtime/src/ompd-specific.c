@@ -22,8 +22,6 @@ const char * * ompd_dll_locations=NULL;
 const char * ompd_my_dll_locations[2] = {"libompd_intel.so",NULL};
 int ompd_state=0;
 
-extern void __ompt_init_internal(void);
-
 int ompd_rtl_version = 4;
 
 void ompd_init()
@@ -66,9 +64,8 @@ OMPD_FOREACH_SIZEOF(ompd_init_sizeof)
   {
     fprintf(stderr,
                 "OMP_OMPD active\n");
-    ompt_status = ompt_status_track_callback;
+    ompt_enabled = 1;
     ompd_state |= OMPD_ENABLE_BP;
-    __ompt_init_internal();
   }
     
   ompd_initialized = 1;
@@ -78,9 +75,11 @@ void omp_ompd_enable ( void )
 {
     fprintf(stderr,
                 "OMP_OMPD active\n");
-    ompt_status = ompt_status_track_callback;
+    ompt_enabled = 1;
     ompd_state |= OMPD_ENABLE_BP;
-    __ompt_init_internal();
+#ifdef OMPD_SUPPORT
+    ompt_post_init();
+#endif
 }
 
 void ompd_dll_locations_valid ( void ){

@@ -113,10 +113,11 @@
  */
 #ifdef __STRICT_ANSI__
 #define ITT_INLINE           static
+#define ITT_INLINE_ATTRIBUTE __attribute__((unused))
 #else  /* __STRICT_ANSI__ */
 #define ITT_INLINE           static inline
+#define ITT_INLINE_ATTRIBUTE __attribute__((always_inline, unused))
 #endif /* __STRICT_ANSI__ */
-#define ITT_INLINE_ATTRIBUTE __attribute__ ((always_inline, unused))
 #endif /* ITT_PLATFORM==ITT_PLATFORM_WIN */
 /** @endcond */
 
@@ -160,8 +161,12 @@
 
 #ifdef __cplusplus
 #  define ITT_EXTERN_C extern "C"
+#  define ITT_EXTERN_C_BEGIN extern "C" {
+#  define ITT_EXTERN_C_END }
 #else
 #  define ITT_EXTERN_C /* nothing */
+#  define ITT_EXTERN_C_BEGIN /* nothing */
+#  define ITT_EXTERN_C_END /* nothing */
 #endif /* __cplusplus */
 
 #define ITT_TO_STR_AUX(x) #x
@@ -274,7 +279,7 @@ ITT_INLINE long __itt_interlocked_increment(volatile long* ptr)
 #ifdef __INTEL_COMPILER
 #define __TBB_machine_fetchadd4(addr, val) __fetchadd4_acq((void *)addr, val)
 #else  /* __INTEL_COMPILER */
-/* TODO: Add Support for not Intel compilers for IA-64 */
+/* TODO: Add Support for not Intel compilers for IA-64 architecture */
 #endif /* __INTEL_COMPILER */
 #elif ITT_ARCH==ITT_ARCH_IA32 || ITT_ARCH==ITT_ARCH_IA32E /* ITT_ARCH!=ITT_ARCH_IA64 */
 ITT_INLINE long

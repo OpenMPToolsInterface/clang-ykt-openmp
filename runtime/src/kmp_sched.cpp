@@ -84,6 +84,8 @@ __kmp_for_static_init(
     typename traits_t< T >::signed_t  chunk
 ) {
     KMP_COUNT_BLOCK(OMP_FOR_static);
+    KMP_TIME_BLOCK (FOR_static_scheduling);
+
     typedef typename traits_t< T >::unsigned_t  UT;
     typedef typename traits_t< T >::signed_t    ST;
     /*  this all has to be changed back to TID and such.. */
@@ -144,13 +146,14 @@ __kmp_for_static_init(
         KE_TRACE( 10, ("__kmpc_for_static_init: T#%d return\n", global_tid ) );
 
 #if OMPT_SUPPORT && OMPT_TRACE
-        if ((ompt_status == ompt_status_track_callback) &&
+        if (ompt_enabled &&
             ompt_callbacks.ompt_callback(ompt_event_loop_begin)) {
             ompt_callbacks.ompt_callback(ompt_event_loop_begin)(
                 team_info->parallel_id, task_info->task_id,
                 team_info->microtask);
         }
 #endif
+        KMP_COUNT_VALUE (FOR_static_iterations, 0);
         return;
     }
 
@@ -189,7 +192,7 @@ __kmp_for_static_init(
         KE_TRACE( 10, ("__kmpc_for_static_init: T#%d return\n", global_tid ) );
 
 #if OMPT_SUPPORT && OMPT_TRACE
-        if ((ompt_status == ompt_status_track_callback) &&
+        if (ompt_enabled &&
             ompt_callbacks.ompt_callback(ompt_event_loop_begin)) {
             ompt_callbacks.ompt_callback(ompt_event_loop_begin)(
                 team_info->parallel_id, task_info->task_id,
@@ -217,7 +220,7 @@ __kmp_for_static_init(
         KE_TRACE( 10, ("__kmpc_for_static_init: T#%d return\n", global_tid ) );
 
 #if OMPT_SUPPORT && OMPT_TRACE
-        if ((ompt_status == ompt_status_track_callback) &&
+        if (ompt_enabled &&
             ompt_callbacks.ompt_callback(ompt_event_loop_begin)) {
             ompt_callbacks.ompt_callback(ompt_event_loop_begin)(
                 team_info->parallel_id, task_info->task_id,
@@ -246,6 +249,7 @@ __kmp_for_static_init(
             __kmp_error_construct( kmp_i18n_msg_CnsIterationRangeTooLarge, ct_pdo, loc );
         }
     }
+    KMP_COUNT_VALUE (FOR_static_iterations, trip_count);
 
     /* compute remaining parameters */
     switch ( schedtype ) {
@@ -348,7 +352,7 @@ __kmp_for_static_init(
     KE_TRACE( 10, ("__kmpc_for_static_init: T#%d return\n", global_tid ) );
 
 #if OMPT_SUPPORT && OMPT_TRACE
-    if ((ompt_status == ompt_status_track_callback) &&
+    if (ompt_enabled &&
         ompt_callbacks.ompt_callback(ompt_event_loop_begin)) {
         ompt_callbacks.ompt_callback(ompt_event_loop_begin)(
             team_info->parallel_id, task_info->task_id, team_info->microtask);
@@ -372,7 +376,7 @@ __kmp_dist_for_static_init(
     typename traits_t< T >::signed_t  incr,
     typename traits_t< T >::signed_t  chunk
 ) {
-    KMP_COUNT_BLOCK(OMP_DISTR_FOR_static);
+    KMP_COUNT_BLOCK(OMP_DISTRIBUTE);
     typedef typename traits_t< T >::unsigned_t  UT;
     typedef typename traits_t< T >::signed_t    ST;
     register kmp_uint32  tid;
@@ -420,10 +424,10 @@ __kmp_dist_for_static_init(
     }
     tid = __kmp_tid_from_gtid( gtid );
     th = __kmp_threads[gtid];
-    KMP_DEBUG_ASSERT(th->th.th_teams_microtask);   // we are in the teams construct
     nth = th->th.th_team_nproc;
     team = th->th.th_team;
     #if OMP_40_ENABLED
+    KMP_DEBUG_ASSERT(th->th.th_teams_microtask);   // we are in the teams construct
     nteams = th->th.th_teams_size.nteams;
     #endif
     team_id = team->t.t_master_tid;
@@ -437,6 +441,7 @@ __kmp_dist_for_static_init(
     } else {
         trip_count = (ST)(*pupper - *plower) / incr + 1; // cast to signed to cover incr<0 case
     }
+
     *pstride = *pupper - *plower;  // just in case (can be unused)
     if( trip_count <= nteams ) {
         KMP_DEBUG_ASSERT(
@@ -657,9 +662,9 @@ __kmp_team_static_init(
         }
     }
     th = __kmp_threads[gtid];
-    KMP_DEBUG_ASSERT(th->th.th_teams_microtask);   // we are in the teams construct
     team = th->th.th_team;
     #if OMP_40_ENABLED
+    KMP_DEBUG_ASSERT(th->th.th_teams_microtask);   // we are in the teams construct
     nteams = th->th.th_teams_size.nteams;
     #endif
     team_id = team->t.t_master_tid;
@@ -782,17 +787,14 @@ __kmpc_for_static_init_8u( ident_t *loc, kmp_int32 gtid, kmp_int32 schedtype, km
 @ingroup WORK_SHARING
 @param    loc       Source code location
 @param    gtid      Global thread id of this thread
-@param    scheduleD Scheduling type for the distribute
-@param    scheduleL Scheduling type for the parallel loop
+@param    schedule  Scheduling type for the parallel loop
 @param    plastiter Pointer to the "last iteration" flag
 @param    plower    Pointer to the lower bound
 @param    pupper    Pointer to the upper bound of loop chunk
 @param    pupperD   Pointer to the upper bound of dist_chunk
-@param    pstrideD  Pointer to the stride for distribute
-@param    pstrideL  Pointer to the stride for parallel loop
+@param    pstride   Pointer to the stride for parallel loop
 @param    incr      Loop increment
-@param    chunkD    The chunk size for the distribute
-@param    chunkL    The chunk size for the parallel loop
+@param    chunk     The chunk size for the parallel loop
 
 Each of the four functions here are identical apart from the argument types.
 
