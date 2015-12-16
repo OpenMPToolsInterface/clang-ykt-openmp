@@ -6,7 +6,7 @@
  * Declaration of symbols to hold struct size and member offset information
  */
 
-#define ompd_declare_access(t,m) const uint64_t ompd_access__##t##__##m = (uint64_t)&(((t*)0)->m); 
+#define ompd_declare_access(t,m) uint64_t ompd_access__##t##__##m; 
 OMPD_FOREACH_ACCESS(ompd_declare_access)
 #undef ompd_declare_access
 
@@ -14,7 +14,7 @@ OMPD_FOREACH_ACCESS(ompd_declare_access)
 OMPD_FOREACH_BITFIELD(ompd_declare_bitfield)
 #undef ompd_declare_bitfield
 
-#define ompd_declare_sizeof(t) const uint64_t ompd_sizeof__##t = sizeof(t); 
+#define ompd_declare_sizeof(t) uint64_t ompd_sizeof__##t; 
 OMPD_FOREACH_SIZEOF(ompd_declare_sizeof)
 #undef ompd_declare_sizeof
 
@@ -22,9 +22,7 @@ const char * * ompd_dll_locations=NULL;
 const char * ompd_my_dll_locations[2] = {"libompd_intel.so",NULL};
 uint64_t ompd_state=0;
 
-extern void __ompt_init_internal(void);
-
-int ompd_rtl_version = 4;
+int ompd_rtl_version = 5;
 
 void ompd_init()
 {
@@ -35,12 +33,28 @@ if (ompd_initialized)
   return;
   
 /**
+ * Calculate member offsets for structs and unions
+ */
+
+#define ompd_init_access(t,m) ompd_access__##t##__##m = (uint64_t)&(((t*)0)->m); 
+OMPD_FOREACH_ACCESS(ompd_init_access)
+#undef ompd_init_access
+
+/**
  * Create bit mask for bitfield access
  */
 
 #define ompd_init_bitfield(t,m) ompd_bitfield__##t##__##m=0; ((t*)(&ompd_bitfield__##t##__##m))->m = 1; 
 OMPD_FOREACH_BITFIELD(ompd_init_bitfield)
 #undef ompd_init_bitfield
+
+/**
+ * Calculate type size information
+ */
+
+#define ompd_init_sizeof(t) ompd_sizeof__##t = sizeof(t); 
+OMPD_FOREACH_SIZEOF(ompd_init_sizeof)
+#undef ompd_init_sizeof
 
   ompd_dll_locations=ompd_my_dll_locations;
   ompd_dll_locations_valid ();
@@ -50,9 +64,8 @@ OMPD_FOREACH_BITFIELD(ompd_init_bitfield)
   {
     fprintf(stderr,
                 "OMP_OMPD active\n");
-    ompt_status = ompt_status_track_callback;
+    ompt_enabled = 1;
     ompd_state |= OMPD_ENABLE_BP;
-    __ompt_init_internal();
   }
     
   ompd_initialized = 1;
@@ -62,9 +75,11 @@ void omp_ompd_enable ( void )
 {
     fprintf(stderr,
                 "OMP_OMPD active\n");
-    ompt_status = ompt_status_track_callback;
+    ompt_enabled = 1;
     ompd_state |= OMPD_ENABLE_BP;
-    __ompt_init_internal();
+#ifdef OMPD_SUPPORT
+    ompt_post_init();
+#endif
 }
 
 void ompd_dll_locations_valid ( void ){

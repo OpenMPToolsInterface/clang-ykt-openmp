@@ -46,6 +46,7 @@ OMPD_ACCESS(kmp_base_team_t,      t_threads) \
 OMPD_ACCESS(kmp_desc_t,           ds) \
 \
 OMPD_ACCESS(kmp_desc_base_t,      ds_thread) \
+OMPD_ACCESS(kmp_desc_base_t,      ds_tid) \
 \
 OMPD_ACCESS(kmp_info_t,           th) \
 \
