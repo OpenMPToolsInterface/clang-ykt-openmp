@@ -20,7 +20,7 @@ OMPD_FOREACH_SIZEOF(ompd_declare_sizeof)
 
 const char * * ompd_dll_locations=NULL;
 const char * ompd_my_dll_locations[2] = {"libompd_intel.so",NULL};
-int ompd_state=0;
+uint64_t ompd_state=0;
 
 extern void __ompt_init_internal(void);
 

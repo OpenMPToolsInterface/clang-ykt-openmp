@@ -22,7 +22,7 @@ void ompd_bp_task_end ( void );
 } /* extern "C" */
 #endif
 
-extern int ompd_state;
+extern uint64_t ompd_state;
 #define OMPD_ENABLE_BP 0x1
 
 #define OMPD_FOREACH_ACCESS(OMPD_ACCESS) \
