@@ -13,9 +13,6 @@
 //===----------------------------------------------------------------------===//
 
 
-#if defined(__x86_64) || defined (__powerpc64__) || defined(__aarch64__)
-# define KMP_I8
-#endif
 #include "kmp.h"
 #include "kmp_atomic.h"
 
@@ -936,7 +933,7 @@ PARALLEL_LOOP_START(xexpand(KMP_API_NAME_GOMP_PARALLEL_LOOP_RUNTIME_START),
 
 void
 xexpand(KMP_API_NAME_GOMP_TASK)(void (*func)(void *), void *data, void (*copy_func)(void *, void *),
-  long arg_size, long arg_align, int if_cond, unsigned gomp_flags)
+  long arg_size, long arg_align, bool if_cond, unsigned gomp_flags)
 {
     MKLOC(loc, "GOMP_task");
     int gtid = __kmp_entry_gtid();
@@ -948,6 +945,10 @@ xexpand(KMP_API_NAME_GOMP_TASK)(void (*func)(void *), void *data, void (*copy_fu
     // The low-order bit is the "tied" flag
     if (gomp_flags & 1) {
         input_flags->tiedness = 1;
+    }
+    // The second low-order bit is the "final" flag
+    if (gomp_flags & 2) {
+        input_flags->final = 1;
     }
     input_flags->native = 1;
     // __kmp_task_alloc() sets up all other flags

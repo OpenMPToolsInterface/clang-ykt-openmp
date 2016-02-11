@@ -29,7 +29,7 @@
 #define NEXT_ID(id_ptr,tid) \
   ((KMP_TEST_THEN_INC64(id_ptr) << OMPT_THREAD_ID_BITS) | (tid))
 #else
-#define NEXT_ID(id_ptr,tid) (KMP_TEST_THEN_INC64(id_ptr))
+#define NEXT_ID(id_ptr,tid) (KMP_TEST_THEN_INC64((volatile kmp_int64 *)id_ptr))
 #endif
 
 //******************************************************************************
@@ -50,6 +50,8 @@ __ompt_get_teaminfo(int depth, int *size)
 
     if (thr) {
         kmp_team *team = thr->th.th_team;
+        if (team == NULL) return NULL;
+
         ompt_lw_taskteam_t *lwt = LWT_FROM_TEAM(team);
 
         while(depth > 0) {

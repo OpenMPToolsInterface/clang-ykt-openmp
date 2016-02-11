@@ -17,6 +17,8 @@
 #include "kmp_wait_release.h"
 #include "kmp_stats.h"
 #include "kmp_itt.h"
+#include "kmp_os.h"
+
 
 #if KMP_MIC
 #include <immintrin.h>
@@ -459,7 +461,7 @@ __kmp_hyper_barrier_gather(enum barrier_type bt, kmp_info_t *this_thr, int gtid,
                a worker thread may not assume that the team is valid any more - it could be
                deallocated by the master thread at any time.  */
             p_flag.set_waiter(other_threads[parent_tid]);
-	    p_flag.release();
+            p_flag.release();
             break;
         }
 
@@ -704,6 +706,8 @@ __kmp_init_hierarchical_barrier_thread(enum barrier_type bt, kmp_bstate_t *thr_b
         thr_bar->offset = 7-(tid-thr_bar->parent_tid-1);
         thr_bar->old_tid = tid;
         thr_bar->wait_flag = KMP_BARRIER_NOT_WAITING;
+        thr_bar->team = team;
+        thr_bar->parent_bar = &team->t.t_threads[thr_bar->parent_tid]->th.th_bar[bt].bb;
     }
     if (uninitialized || team_changed || tid_changed) {
         thr_bar->team = team;
@@ -762,6 +766,8 @@ __kmp_hierarchical_barrier_gather(enum barrier_type bt, kmp_info_t *this_thr,
         if (__kmp_dflt_blocktime == KMP_MAX_BLOCKTIME && thr_bar->use_oncore_barrier) {
             if (thr_bar->leaf_kids) { // First, wait for leaf children to check-in on my b_arrived flag
                 kmp_uint64 leaf_state = KMP_MASTER_TID(tid) ? thr_bar->b_arrived | thr_bar->leaf_state : team->t.t_bar[bt].b_arrived | thr_bar->leaf_state;
+                KA_TRACE(20, ("__kmp_hierarchical_barrier_gather: T#%d(%d:%d) waiting for leaf kids\n",
+                              gtid, team->t.t_id, tid));
                 kmp_flag_64 flag(&thr_bar->b_arrived, leaf_state);
                 flag.wait(this_thr, FALSE
                           USE_ITT_BUILD_ARG(itt_sync_obj) );
@@ -886,8 +892,7 @@ __kmp_hierarchical_barrier_release(enum barrier_type bt, kmp_info_t *this_thr, i
             kmp_flag_oncore flag(&thr_bar->parent_bar->b_go, KMP_BARRIER_STATE_BUMP, thr_bar->offset,
                                  bt, this_thr
                                  USE_ITT_BUILD_ARG(itt_sync_obj) );
-            flag.wait(this_thr, TRUE
-                      USE_ITT_BUILD_ARG(itt_sync_obj) );
+            flag.wait(this_thr, TRUE);
             if (thr_bar->wait_flag == KMP_BARRIER_SWITCHING) { // Thread was switched to own b_go
                 TCW_8(thr_bar->b_go, KMP_INIT_BARRIER_STATE); // Reset my b_go flag for next time
             }
@@ -909,6 +914,7 @@ __kmp_hierarchical_barrier_release(enum barrier_type bt, kmp_info_t *this_thr, i
         KMP_MB();  // Flush all pending memory write invalidates.
     }
 
+    nproc = this_thr->th.th_team_nproc;
     int level = team->t.t_level;
 #if OMP_40_ENABLED
     if (team->t.t_threads[0]->th.th_teams_microtask ) {    // are we inside the teams construct?
@@ -920,7 +926,6 @@ __kmp_hierarchical_barrier_release(enum barrier_type bt, kmp_info_t *this_thr, i
 #endif
     if (level == 1) thr_bar->use_oncore_barrier = 1;
     else thr_bar->use_oncore_barrier = 0; // Do not use oncore barrier when nested
-    nproc = this_thr->th.th_team_nproc;
 
     // If the team size has increased, we still communicate with old leaves via oncore barrier.
     unsigned short int old_leaf_kids = thr_bar->leaf_kids;
@@ -1121,6 +1126,10 @@ __kmp_barrier(enum barrier_type bt, int gtid, int is_split, size_t reduce_size,
             //KMP_DEBUG_ASSERT( is_split == TRUE );  // #C69956
             this_thr->th.th_local.reduce_data = reduce_data;
         }
+
+        if (KMP_MASTER_TID(tid) && __kmp_tasking_mode != tskm_immediate_exec)
+            __kmp_task_team_setup(this_thr, team, 0); // use 0 to only setup the current team if nthreads > 1
+
         switch (__kmp_barrier_gather_pattern[bt]) {
         case bp_hyper_bar: {
             KMP_ASSERT(__kmp_barrier_gather_branch_bits[bt]); // don't set branch bits to 0; use linear
@@ -1152,7 +1161,6 @@ __kmp_barrier(enum barrier_type bt, int gtid, int is_split, size_t reduce_size,
             if (__kmp_tasking_mode != tskm_immediate_exec) {
                 __kmp_task_team_wait(this_thr, team
                                      USE_ITT_BUILD_ARG(itt_sync_obj) );
-                __kmp_task_team_setup(this_thr, team, 0, 0); // use 0,0 to only setup the current team if nthreads > 1
             }
 #if USE_DEBUGGER
             // Let the debugger know: All threads are arrived and starting leaving the barrier.
@@ -1260,7 +1268,7 @@ __kmp_barrier(enum barrier_type bt, int gtid, int is_split, size_t reduce_size,
                 KMP_DEBUG_ASSERT(this_thr->th.th_task_team->tt.tt_found_proxy_tasks == TRUE);
                 __kmp_task_team_wait(this_thr, team
                                                USE_ITT_BUILD_ARG(itt_sync_obj));
-                __kmp_task_team_setup(this_thr, team, 0, 0);
+                __kmp_task_team_setup(this_thr, team, 0);
 
 #if USE_ITT_BUILD
                 if (__itt_sync_create_ptr || KMP_ITT_DEBUG)
@@ -1449,8 +1457,6 @@ __kmp_join_barrier(int gtid)
        the kmp_task_team_t structs.  */
     if (KMP_MASTER_TID(tid)) {
         if (__kmp_tasking_mode != tskm_immediate_exec) {
-            // Master shouldn't call decrease_load().         // TODO: enable master threads.
-            // Master should have th_may_decrease_load == 0.  // TODO: enable master threads.
             __kmp_task_team_wait(this_thr, team
                                  USE_ITT_BUILD_ARG(itt_sync_obj) );
         }
@@ -1574,7 +1580,7 @@ __kmp_fork_barrier(int gtid, int tid)
 #endif
 
         if (__kmp_tasking_mode != tskm_immediate_exec) {
-            __kmp_task_team_setup(this_thr, team, 1, 0);  // 1,0 indicates setup both task teams if nthreads > 1
+            __kmp_task_team_setup(this_thr, team, 0);  // 0 indicates setup current task team if nthreads > 1
         }
 
         /* The master thread may have changed its blocktime between the join barrier and the
@@ -1613,14 +1619,7 @@ __kmp_fork_barrier(int gtid, int tid)
 
     // Early exit for reaping threads releasing forkjoin barrier
     if (TCR_4(__kmp_global.g.g_done)) {
-        if (this_thr->th.th_task_team != NULL) {
-            if (KMP_MASTER_TID(tid)) {
-                TCW_PTR(this_thr->th.th_task_team, NULL);
-            }
-            else {
-                __kmp_unref_task_team(this_thr->th.th_task_team, this_thr);
-            }
-        }
+        this_thr->th.th_task_team = NULL;
 
 #if USE_ITT_BUILD && USE_ITT_NOTIFY
         if (__itt_sync_create_ptr || KMP_ITT_DEBUG) {
