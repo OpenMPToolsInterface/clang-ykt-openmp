@@ -57,6 +57,8 @@ OMPD_ACCESS(kmp_root_t,           r) \
 \
 OMPD_ACCESS(kmp_internal_control_t, dynamic) \
 OMPD_ACCESS(kmp_internal_control_t, max_active_levels) \
+OMPD_ACCESS(kmp_internal_control_t, nested) \
+OMPD_ACCESS(kmp_internal_control_t, nproc) \
 OMPD_ACCESS(kmp_internal_control_t, proc_bind) \
 OMPD_ACCESS(kmp_internal_control_t, sched) \
 \
@@ -106,7 +108,7 @@ OMPD_SIZEOF(ompt_task_id_t) \
 OMPD_SIZEOF(__kmp_avail_proc) \
 OMPD_SIZEOF(__kmp_max_nth) \
 OMPD_SIZEOF(__kmp_gtid) \
-
+OMPD_SIZEOF(__kmp_nth) \
 
 #endif /* OMPD_SUPPORT */
 #endif

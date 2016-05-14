@@ -10,6 +10,10 @@
 OMPD_FOREACH_ACCESS(ompd_declare_access)
 #undef ompd_declare_access
 
+#define ompd_declare_sizeof_member(t,m) uint64_t ompd_sizeof__##t##__##m; 
+OMPD_FOREACH_ACCESS(ompd_declare_sizeof_member)
+#undef ompd_declare_sizeof_member
+
 #define ompd_declare_bitfield(t,m) uint64_t ompd_bitfield__##t##__##m; 
 OMPD_FOREACH_BITFIELD(ompd_declare_bitfield)
 #undef ompd_declare_bitfield
@@ -22,7 +26,7 @@ const char * * ompd_dll_locations=NULL;
 const char * ompd_my_dll_locations[2] = {"libompd_intel.so",NULL};
 uint64_t ompd_state=0;
 
-int ompd_rtl_version = 5;
+int ompd_rtl_version = 6;
 
 void ompd_init()
 {
@@ -51,6 +55,10 @@ OMPD_FOREACH_BITFIELD(ompd_init_bitfield)
 /**
  * Calculate type size information
  */
+
+#define ompd_init_sizeof_member(t,m) ompd_sizeof__##t##__##m = sizeof(((t*)0)->m); 
+OMPD_FOREACH_ACCESS(ompd_init_sizeof_member)
+#undef ompd_init_sizeof_member
 
 #define ompd_init_sizeof(t) ompd_sizeof__##t = sizeof(t); 
 OMPD_FOREACH_SIZEOF(ompd_init_sizeof)
