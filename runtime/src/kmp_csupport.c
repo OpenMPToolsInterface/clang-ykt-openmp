@@ -306,7 +306,7 @@ __kmpc_fork_call(ident_t *loc, kmp_int32 argc, kmpc_micro microtask, ...)
     kmp_team_t *parent_team = master_th->th.th_team;
     if (ompt_enabled) {
        parent_team->t.t_implicit_task_taskdata[tid].
-           ompt_task_info.frame.reenter_runtime_frame = __builtin_frame_address(0);
+           ompt_task_info.frame.reenter_runtime_frame = __builtin_frame_address(1);
     }
 #endif
 
@@ -396,7 +396,7 @@ __kmpc_fork_teams(ident_t *loc, kmp_int32 argc, kmpc_micro microtask, ...)
     int tid = __kmp_tid_from_gtid( gtid );
     if (ompt_enabled) {
         parent_team->t.t_implicit_task_taskdata[tid].
-           ompt_task_info.frame.reenter_runtime_frame = __builtin_frame_address(0);
+           ompt_task_info.frame.reenter_runtime_frame = __builtin_frame_address(1);
     }
 #endif
 
