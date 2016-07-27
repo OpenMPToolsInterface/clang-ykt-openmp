@@ -266,7 +266,7 @@ __kmp_GOMP_microtask_wrapper(int *gtid, int *npr, void (*task)(void *),
 
         // set task frame
         ompt_frame = __ompt_get_task_frame_internal(0);
-        ompt_frame->exit_runtime_frame = __builtin_frame_address(0);
+        ompt_frame->exit_runtime_frame = __builtin_frame_address(1);
     }
 #endif
 
@@ -311,7 +311,7 @@ __kmp_GOMP_parallel_microtask_wrapper(int *gtid, int *npr,
 
         // set task frame
         ompt_frame = __ompt_get_task_frame_internal(0);
-        ompt_frame->exit_runtime_frame = __builtin_frame_address(0);
+        ompt_frame->exit_runtime_frame = __builtin_frame_address(1);
     }
 #endif
 
@@ -1000,7 +1000,7 @@ xexpand(KMP_API_NAME_GOMP_TASK)(void (*func)(void *), void *data, void (*copy_fu
             thread->th.ompt_thread_info.wait_id = 0;
             thread->th.ompt_thread_info.state = ompt_state_work_parallel;
             taskdata->ompt_task_info.frame.exit_runtime_frame =
-                __builtin_frame_address(0);
+                __builtin_frame_address(1);
         }
 #endif
 
