@@ -71,6 +71,7 @@ OMPD_ACCESS(kmp_taskdata_t,       td_team) \
 OMPD_ACCESS(kmp_team_p,           t) \
 \
 OMPD_ACCESS(ompt_task_info_t,     frame) \
+OMPD_ACCESS(ompt_task_info_t,     scheduling_parent) \
 OMPD_ACCESS(ompt_task_info_t,     task_id) \
 OMPD_ACCESS(ompt_task_info_t,     function) \
 \

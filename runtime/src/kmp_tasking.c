@@ -458,6 +458,9 @@ __kmp_task_start( kmp_int32 gtid, kmp_task_t * task, kmp_taskdata_t * current_ta
             taskdata->ompt_task_info.task_id,
             taskdata->ompt_task_info.function);
     }
+    if (ompt_enabled)
+        taskdata->ompt_task_info.scheduling_parent = current_task;
+        
 #endif
 #if OMP_40_ENABLED && OMPT_SUPPORT && OMPT_TRACE
     /* OMPT emit all dependences if requested by the tool */
@@ -1173,7 +1176,7 @@ __kmp_invoke_task( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t * current_ta
         oldInfo = thread->th.ompt_thread_info;
         thread->th.ompt_thread_info.wait_id = 0;
         thread->th.ompt_thread_info.state = ompt_state_work_parallel;
-        taskdata->ompt_task_info.frame.exit_runtime_frame = __builtin_frame_address(1);
+        taskdata->ompt_task_info.frame.exit_runtime_frame = __builtin_frame_address(0);
     }
 #endif
 
@@ -1332,7 +1335,7 @@ __kmp_omp_task( kmp_int32 gtid, kmp_task_t * new_task, bool serialize_immediate 
 #if OMPT_SUPPORT
     if (ompt_enabled) {
         new_taskdata->ompt_task_info.frame.reenter_runtime_frame =
-            __builtin_frame_address(0);
+            __builtin_frame_address(1);
     }
 #endif
 
