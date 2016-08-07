@@ -34,6 +34,7 @@ OMPD_ACCESS(kmp_base_info_t,      ompt_thread_info) \
 OMPD_ACCESS(kmp_base_root_t,      r_in_parallel) \
 \
 OMPD_ACCESS(kmp_base_team_t,      ompt_team_info) \
+OMPD_ACCESS(kmp_base_team_t,      ompt_serialized_team_info) \
 OMPD_ACCESS(kmp_base_team_t,      t_active_level) \
 OMPD_ACCESS(kmp_base_team_t,      t_implicit_task_taskdata) \
 OMPD_ACCESS(kmp_base_team_t,      t_master_tid) \
@@ -83,6 +84,10 @@ OMPD_ACCESS(ompt_thread_info_t,   wait_id) \
 \
 OMPD_ACCESS(ompt_frame_t,         reenter_runtime_frame) \
 OMPD_ACCESS(ompt_frame_t,         exit_runtime_frame) \
+\
+OMPD_ACCESS(ompt_lw_taskteam_t,   parent) \
+OMPD_ACCESS(ompt_lw_taskteam_t,   ompt_team_info) \
+OMPD_ACCESS(ompt_lw_taskteam_t,   ompt_task_info)
 
 
 #define OMPD_FOREACH_BITFIELD(OMPD_BITFIELD) \
