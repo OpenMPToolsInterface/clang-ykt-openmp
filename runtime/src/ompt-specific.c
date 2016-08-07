@@ -60,7 +60,12 @@ __ompt_get_teaminfo(int depth, int *size)
 
             // next heavyweight team (if any) after
             // lightweight teams are exhausted
-            if (!lwt && team) team=team->t.t_parent;
+            if (!lwt && team) {
+                team=team->t.t_parent;
+                if (team) {
+                    lwt = LWT_FROM_TEAM(team);
+                }
+            }
 
             depth--;
         }
@@ -114,6 +119,32 @@ __ompt_get_taskinfo(int depth)
         } else if (taskdata) {
             info = &taskdata->ompt_task_info;
         }
+    }
+
+    return info;
+}
+
+ompt_task_info_t *
+__ompt_get_scheduling_taskinfo(int depth)
+{
+    ompt_task_info_t *info = NULL;
+    kmp_info_t *thr = ompt_get_thread();
+
+    if (thr) {
+        kmp_taskdata_t  *taskdata = thr->th.th_current_task;
+//        ompt_lw_taskteam_t *lwt = LWT_FROM_TEAM(taskdata->td_team);
+
+        while (depth > 0) {
+
+            if (taskdata) {
+                taskdata = taskdata->ompt_task_info.scheduling_parent;
+            }else{
+                return NULL;
+            }
+            depth--;
+        }
+
+        info = &taskdata->ompt_task_info;
     }
 
     return info;
@@ -316,6 +347,14 @@ ompt_frame_t *
 __ompt_get_task_frame_internal(int depth)
 {
     ompt_task_info_t *info = __ompt_get_taskinfo(depth);
+    ompt_frame_t *frame = info ? frame = &info->frame : NULL;
+    return frame;
+}
+
+ompt_frame_t *
+__ompt_get_scheduling_task_frame_internal(int depth)
+{
+    ompt_task_info_t *info = __ompt_get_scheduling_taskinfo(depth);
     ompt_frame_t *frame = info ? frame = &info->frame : NULL;
     return frame;
 }

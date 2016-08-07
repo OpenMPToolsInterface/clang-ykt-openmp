@@ -421,6 +421,11 @@ OMPT_API_ROUTINE ompt_frame_t *ompt_get_task_frame(int depth)
     return __ompt_get_task_frame_internal(depth);
 }
 
+OMPT_API_ROUTINE ompt_frame_t *ompt_get_scheduling_task_frame(int depth)
+{
+    return __ompt_get_scheduling_task_frame_internal(depth);
+}
+
 
 OMPT_API_ROUTINE void *ompt_get_task_function(int depth)
 {

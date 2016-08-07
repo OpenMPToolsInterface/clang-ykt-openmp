@@ -1558,6 +1558,9 @@ __kmp_fork_call(
                                         , exit_runtime_p
 #endif
                                         );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
             }
 
 #if OMPT_SUPPORT
@@ -1760,6 +1763,9 @@ __kmp_fork_call(
                         , exit_runtime_p
 #endif
                     );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
                 }
 
 #if OMPT_SUPPORT
@@ -1867,6 +1873,9 @@ __kmp_fork_call(
                         , exit_runtime_p
 #endif
                     );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
                 }
 
 #if OMPT_SUPPORT
@@ -6844,6 +6853,9 @@ __kmp_invoke_task_func( int gtid )
                                      , exit_runtime_p
 #endif
                                      );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
     }
 
 #if USE_ITT_BUILD

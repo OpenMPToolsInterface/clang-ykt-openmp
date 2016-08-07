@@ -458,6 +458,9 @@ __kmp_task_start( kmp_int32 gtid, kmp_task_t * task, kmp_taskdata_t * current_ta
             taskdata->ompt_task_info.task_id,
             taskdata->ompt_task_info.function);
     }
+    if (ompt_enabled)
+        taskdata->ompt_task_info.scheduling_parent = current_task;
+        
 #endif
 #if OMP_40_ENABLED && OMPT_SUPPORT && OMPT_TRACE
     /* OMPT emit all dependences if requested by the tool */
