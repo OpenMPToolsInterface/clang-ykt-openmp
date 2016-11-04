@@ -48,6 +48,10 @@
         #define KMP_COMPILER "Intel C++ Compiler 15.0"
     #elif __INTEL_COMPILER == 1600
         #define KMP_COMPILER "Intel C++ Compiler 16.0"
+    #elif __INTEL_COMPILER == 1700
+        #define KMP_COMPILER "Intel C++ Compiler 17.0"
+    #elif __INTEL_COMPILER == 9998
+        #define KMP_COMPILER "Intel C++ Compiler mainline"
     #elif __INTEL_COMPILER == 9999
         #define KMP_COMPILER "Intel C++ Compiler mainline"
     #endif
@@ -85,7 +89,9 @@ int const __kmp_version_major = KMP_VERSION_MAJOR;
 int const __kmp_version_minor = KMP_VERSION_MINOR;
 int const __kmp_version_build = KMP_VERSION_BUILD;
 int const __kmp_openmp_version =
-    #if OMP_40_ENABLED
+    #if OMP_45_ENABLED
+        201511;
+    #elif OMP_40_ENABLED
         201307;
     #else
         201107;

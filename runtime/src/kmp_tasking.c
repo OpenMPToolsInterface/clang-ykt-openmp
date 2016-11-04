@@ -579,15 +579,19 @@ __kmp_free_task( kmp_int32 gtid, kmp_taskdata_t * taskdata, kmp_info_t * thread 
 static void
 __kmp_free_task_and_ancestors( kmp_int32 gtid, kmp_taskdata_t * taskdata, kmp_info_t * thread )
 {
-    kmp_int32 children = 0;
-    kmp_int32 team_or_tasking_serialized = taskdata -> td_flags.team_serial || taskdata -> td_flags.tasking_ser;
-
+#if OMP_45_ENABLED
+    // Proxy tasks must always be allowed to free their parents
+    // because they can be run in background even in serial mode.
+    kmp_int32 team_serial = ( taskdata->td_flags.team_serial ||
+        taskdata->td_flags.tasking_ser ) && !taskdata->td_flags.proxy;
+#else
+    kmp_int32 team_serial = taskdata->td_flags.team_serial ||
+        taskdata->td_flags.tasking_ser;
+#endif
     KMP_DEBUG_ASSERT( taskdata -> td_flags.tasktype == TASK_EXPLICIT );
 
-    if ( !team_or_tasking_serialized ) {
-        children = KMP_TEST_THEN_DEC32( (kmp_int32 *)(& taskdata -> td_allocated_child_tasks) ) - 1;
-        KMP_DEBUG_ASSERT( children >= 0 );
-    }
+    kmp_int32 children = KMP_TEST_THEN_DEC32( (kmp_int32 *)(& taskdata -> td_allocated_child_tasks) ) - 1;
+    KMP_DEBUG_ASSERT( children >= 0 );
 
     // Now, go up the ancestor tree to see if any ancestors can now be freed.
     while ( children == 0 )
@@ -602,16 +606,14 @@ __kmp_free_task_and_ancestors( kmp_int32 gtid, kmp_taskdata_t * taskdata, kmp_in
 
         taskdata = parent_taskdata;
 
-        // Stop checking ancestors at implicit task or if tasking serialized
+        // Stop checking ancestors at implicit task
         // instead of walking up ancestor tree to avoid premature deallocation of ancestors.
-        if ( team_or_tasking_serialized || taskdata -> td_flags.tasktype == TASK_IMPLICIT )
+        if ( team_serial || taskdata -> td_flags.tasktype == TASK_IMPLICIT )
             return;
 
-        if ( !team_or_tasking_serialized ) {
-            // Predecrement simulated by "- 1" calculation
-            children = KMP_TEST_THEN_DEC32( (kmp_int32 *)(& taskdata -> td_allocated_child_tasks) ) - 1;
-            KMP_DEBUG_ASSERT( children >= 0 );
-        }
+        // Predecrement simulated by "- 1" calculation
+        children = KMP_TEST_THEN_DEC32( (kmp_int32 *)(& taskdata -> td_allocated_child_tasks) ) - 1;
+        KMP_DEBUG_ASSERT( children >= 0 );
     }
 
     KA_TRACE(20, ("__kmp_free_task_and_ancestors(exit): T#%d task %p has %d children; "
@@ -629,6 +631,7 @@ __kmp_task_finish( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t *resumed_tas
 {
     kmp_taskdata_t * taskdata = KMP_TASK_TO_TASKDATA(task);
     kmp_info_t * thread = __kmp_threads[ gtid ];
+    kmp_task_team_t * task_team = thread->th.th_task_team; // might be NULL for serial teams...
     kmp_int32 children = 0;
 
 #if OMPT_SUPPORT
@@ -685,6 +688,12 @@ __kmp_task_finish( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t *resumed_tas
 #if OMP_40_ENABLED
         if ( taskdata->td_taskgroup )
             KMP_TEST_THEN_DEC32( (kmp_int32 *)(& taskdata->td_taskgroup->count) );
+#if OMP_45_ENABLED
+    }
+    // if we found proxy tasks there could exist a dependency chain
+    // with the proxy task as origin
+    if ( !( taskdata -> td_flags.team_serial || taskdata -> td_flags.tasking_ser ) || (task_team && task_team->tt.tt_found_proxy_tasks) ) {
+#endif
         __kmp_release_deps(gtid,taskdata);
 #endif
     }
@@ -722,7 +731,11 @@ __kmp_task_finish( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t *resumed_tas
         if (resumed_task == NULL) {
             resumed_task = taskdata->td_parent;  // In a serialized task, the resumed task is the parent
         }
-        else {
+        else
+#if OMP_45_ENABLED
+             if ( !(task_team && task_team->tt.tt_found_proxy_tasks) )
+#endif
+        {
             // verify resumed task passed in points to parent
             KMP_DEBUG_ASSERT( resumed_task == taskdata->td_parent );
         }
@@ -855,7 +868,6 @@ __kmp_init_implicit_task( ident_t *loc_ref, kmp_info_t *this_thr, kmp_team_t *te
     task->td_flags.freed       = 0;
 
 #if OMP_40_ENABLED
-    task->td_dephash = NULL;
     task->td_depnode = NULL;
 #endif
 
@@ -864,6 +876,7 @@ __kmp_init_implicit_task( ident_t *loc_ref, kmp_info_t *this_thr, kmp_team_t *te
         task->td_allocated_child_tasks  = 0; // Not used because do not need to deallocate implicit task
 #if OMP_40_ENABLED
         task->td_taskgroup = NULL;           // An implicit task does not have taskgroup
+        task->td_dephash = NULL;
 #endif
         __kmp_push_current_task_to_thread( this_thr, team, tid );
     } else {
@@ -878,6 +891,39 @@ __kmp_init_implicit_task( ident_t *loc_ref, kmp_info_t *this_thr, kmp_team_t *te
     KF_TRACE(10, ("__kmp_init_implicit_task(exit): T#:%d team=%p task=%p\n",
                   tid, team, task ) );
 }
+
+
+//-----------------------------------------------------------------------------
+//// __kmp_finish_implicit_task: Release resources associated to implicit tasks
+//// at the end of parallel regions. Some resources are kept for reuse in the
+//// next parallel region.
+////
+//// thread:  thread data structure corresponding to implicit task
+//
+void
+__kmp_finish_implicit_task(kmp_info_t *thread)
+{
+    kmp_taskdata_t *task = thread->th.th_current_task;
+    if (task->td_dephash)
+        __kmp_dephash_free_entries(thread, task->td_dephash);
+}
+
+
+//-----------------------------------------------------------------------------
+//// __kmp_free_implicit_task: Release resources associated to implicit tasks
+//// when these are destroyed regions
+////
+//// thread:  thread data structure corresponding to implicit task
+//
+void
+__kmp_free_implicit_task(kmp_info_t *thread)
+{
+    kmp_taskdata_t *task = thread->th.th_current_task;
+    if (task->td_dephash)
+        __kmp_dephash_free(thread, task->td_dephash);
+    task->td_dephash = NULL;
+}
+
 
 // Round up a size to a power of two specified by val
 // Used to insert padding between structures co-allocated using a single malloc() call
@@ -1259,7 +1305,7 @@ __kmp_invoke_task( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t * current_ta
 #if OMPT_SUPPORT
     if (ompt_enabled) {
         thread->th.ompt_thread_info = oldInfo;
-        taskdata->ompt_task_info.frame.exit_runtime_frame = 0;
+        taskdata->ompt_task_info.frame.exit_runtime_frame = NULL;
     }
 #endif
 
@@ -1355,7 +1401,7 @@ __kmp_omp_task( kmp_int32 gtid, kmp_task_t * new_task, bool serialize_immediate 
 
 #if OMPT_SUPPORT
     if (ompt_enabled) {
-        new_taskdata->ompt_task_info.frame.reenter_runtime_frame = 0;
+        new_taskdata->ompt_task_info.frame.reenter_runtime_frame = NULL;
     }
 #endif
 
@@ -1442,13 +1488,13 @@ __kmpc_omp_taskwait( ident_t *loc_ref, kmp_int32 gtid )
             __kmp_itt_taskwait_starting( gtid, itt_sync_obj );
 #endif /* USE_ITT_BUILD */
 
+        bool must_wait = ! taskdata->td_flags.team_serial && ! taskdata->td_flags.final;
+
 #if OMP_45_ENABLED
-        if ( ! taskdata->td_flags.team_serial || (thread->th.th_task_team != NULL && thread->th.th_task_team->tt.tt_found_proxy_tasks) )
-#else
-        if ( ! taskdata->td_flags.team_serial )
+        must_wait = must_wait || (thread->th.th_task_team != NULL && thread->th.th_task_team->tt.tt_found_proxy_tasks);
 #endif
+        if (must_wait)
         {
-            // GEH: if team serialized, avoid reading the volatile variable below.
             kmp_flag_32 flag(&(taskdata->td_incomplete_child_tasks), 0U);
             while ( TCR_4(taskdata -> td_incomplete_child_tasks) != 0 ) {
                 flag.execute_tasks(thread, gtid, FALSE, &thread_finished
@@ -1470,7 +1516,7 @@ __kmpc_omp_taskwait( ident_t *loc_ref, kmp_int32 gtid )
                 ompt_callbacks.ompt_callback(ompt_event_taskwait_end)(
                                 my_parallel_id, my_task_id);
             }
-            taskdata->ompt_task_info.frame.reenter_runtime_frame = 0;
+            taskdata->ompt_task_info.frame.reenter_runtime_frame = NULL;
         }
 #endif
     }
@@ -1744,18 +1790,10 @@ __kmp_steal_task( kmp_info_t *victim, kmp_int32 gtid, kmp_task_team_t *task_team
 
     KMP_DEBUG_ASSERT( victim_td -> td.td_deque != NULL );
 
-    if ( !is_constrained ) {
-        taskdata = victim_td -> td.td_deque[ victim_td -> td.td_deque_head ];
-        KMP_ASSERT(taskdata);
-        // Bump head pointer and Wrap.
-        victim_td -> td.td_deque_head = ( victim_td -> td.td_deque_head + 1 ) & TASK_DEQUE_MASK(victim_td->td);
-    } else {
-        // While we have postponed tasks let's steal from tail of the deque (smaller tasks)
-        kmp_int32 tail = ( victim_td -> td.td_deque_tail - 1 ) & TASK_DEQUE_MASK(victim_td->td);  // Wrap index.
-        taskdata = victim_td -> td.td_deque[ tail ];
-        KMP_ASSERT(taskdata);
+    taskdata = victim_td->td.td_deque[victim_td->td.td_deque_head];
+    if ( is_constrained ) {
         // we need to check if the candidate obeys task scheduling constraint:
-        // only child of current task can be scheduled
+        // only descendant of current task can be scheduled
         kmp_taskdata_t * current = __kmp_threads[ gtid ]->th.th_current_task;
         kmp_int32        level = current->td_level;
         kmp_taskdata_t * parent = taskdata->td_parent;
@@ -1763,8 +1801,10 @@ __kmp_steal_task( kmp_info_t *victim, kmp_int32 gtid, kmp_task_team_t *task_team
             parent = parent->td_parent;  // check generation up to the level of the current task
             KMP_DEBUG_ASSERT(parent != NULL);
         }
-        if ( parent != current && (taskdata->td_flags.tiedness == TASK_TIED) ) { // untied is always allowed to be stolen
-            // If the tail task is not a child, then no other childs can appear in the deque (?).
+        if ( parent != current ) {
+            // If the head task is not a descendant of the current task then do not
+            // steal it. No other task in victim's deque can be a descendant of the
+            // current task.
             __kmp_release_bootstrap_lock( & victim_td -> td.td_deque_lock );
             KA_TRACE(10, ("__kmp_steal_task(exit #2): T#%d could not steal from T#%d: task_team=%p "
                           "ntasks=%d head=%u tail=%u\n",
@@ -1773,8 +1813,9 @@ __kmp_steal_task( kmp_info_t *victim, kmp_int32 gtid, kmp_task_team_t *task_team
                           victim_td->td.td_deque_head, victim_td->td.td_deque_tail) );
             return NULL;
         }
-        victim_td -> td.td_deque_tail = tail;
     }
+    // Bump head pointer and Wrap.
+    victim_td->td.td_deque_head = (victim_td->td.td_deque_head + 1) & TASK_DEQUE_MASK(victim_td->td);
     if (*thread_finished) {
         // We need to un-mark this victim as a finished victim.  This must be done before
         // releasing the lock, or else other threads (starting with the master victim)
