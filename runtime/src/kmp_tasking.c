@@ -1222,7 +1222,7 @@ __kmp_invoke_task( kmp_int32 gtid, kmp_task_t *task, kmp_taskdata_t * current_ta
         oldInfo = thread->th.ompt_thread_info;
         thread->th.ompt_thread_info.wait_id = 0;
         thread->th.ompt_thread_info.state = ompt_state_work_parallel;
-        taskdata->ompt_task_info.frame.exit_runtime_frame = __builtin_frame_address(1);
+        taskdata->ompt_task_info.frame.exit_runtime_frame = __builtin_frame_address(0);
     }
 #endif
 
