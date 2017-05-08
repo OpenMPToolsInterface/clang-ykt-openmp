@@ -247,7 +247,8 @@ void ompt_post_init()
     // Initialize the tool if so indicated.
     //--------------------------------------------------
     if (ompt_enabled) {
-        ompt_initialize_fn(ompt_fn_lookup, ompt_get_runtime_version(),
+        if (ompt_initialize_fn)
+            ompt_initialize_fn(ompt_fn_lookup, ompt_get_runtime_version(), 
                            OMPT_VERSION);
 
         ompt_thread_t *root_thread = ompt_get_thread();
@@ -418,6 +419,11 @@ OMPT_API_ROUTINE ompt_task_id_t ompt_get_task_id(int depth)
 OMPT_API_ROUTINE ompt_frame_t *ompt_get_task_frame(int depth)
 {
     return __ompt_get_task_frame_internal(depth);
+}
+
+OMPT_API_ROUTINE ompt_frame_t *ompt_get_scheduling_task_frame(int depth)
+{
+    return __ompt_get_scheduling_task_frame_internal(depth);
 }
 
 

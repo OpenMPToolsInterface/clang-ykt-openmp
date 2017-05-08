@@ -434,6 +434,10 @@ __kmp_GOMP_serialized_parallel(ident_t *loc, kmp_int32 gtid, void (*task)(void *
 #endif
     }
 #endif
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_parallel_begin ();  
+#endif
 }
 
 
@@ -557,6 +561,11 @@ xexpand(KMP_API_NAME_GOMP_PARALLEL_END)(void)
                 ompt_state_work_serial : ompt_state_work_parallel);
         }
 #endif
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_parallel_end ();  
+#endif
+            
     }
 }
 

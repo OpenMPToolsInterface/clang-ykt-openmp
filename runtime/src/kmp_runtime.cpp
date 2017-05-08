@@ -30,6 +30,9 @@
 #if OMPT_SUPPORT
 #include "ompt-specific.h"
 #endif
+#if OMPD_SUPPORT
+#include "ompd-specific.h"
+#endif
 
 /* these are temporary issues to be dealt with */
 #define KMP_USE_PRCTL 0
@@ -1531,6 +1534,7 @@ __kmp_fork_call(
                 exit_runtime_p = &(lw_taskteam.ompt_task_info.frame.exit_runtime_frame);
 
                 __ompt_lw_taskteam_link(&lw_taskteam, master_th);
+                lw_taskteam.ompt_task_info.function = unwrapped_task;
 
 #if OMPT_TRACE
                 /* OMPT implicit task begin */
@@ -1552,11 +1556,18 @@ __kmp_fork_call(
             {
                 KMP_TIME_PARTITIONED_BLOCK(OMP_parallel);
                 KMP_SET_THREAD_STATE_BLOCK(IMPLICIT_TASK);
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_parallel_begin ();
+#endif
                 __kmp_invoke_microtask( microtask, gtid, 0, argc, parent_team->t.t_argv
 #if OMPT_SUPPORT
                                         , exit_runtime_p
 #endif
                                         );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
             }
 
 #if OMPT_SUPPORT
@@ -1582,6 +1593,10 @@ __kmp_fork_call(
                 }
                 master_th->th.ompt_thread_info.state = ompt_state_overhead;
             }
+#endif
+#if OMPD_SUPPORT
+    if ( ompd_state & OMPD_ENABLE_BP )
+        ompd_bp_parallel_end ();
 #endif
             return TRUE;
         }
@@ -1729,6 +1744,7 @@ __kmp_fork_call(
                         unwrapped_task, ompt_parallel_id);
                     lw_taskteam.ompt_task_info.task_id = __ompt_task_id_new(gtid);
                     exit_runtime_p = &(lw_taskteam.ompt_task_info.frame.exit_runtime_frame);
+                    lw_taskteam.ompt_task_info.function = unwrapped_task;
 
                     __ompt_lw_taskteam_link(&lw_taskteam, master_th);
 
@@ -1755,6 +1771,9 @@ __kmp_fork_call(
                         , exit_runtime_p
 #endif
                     );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
                 }
 
 #if OMPT_SUPPORT
@@ -1834,6 +1853,7 @@ __kmp_fork_call(
                         unwrapped_task, ompt_parallel_id);
                     lw_taskteam.ompt_task_info.task_id = __ompt_task_id_new(gtid);
                     exit_runtime_p = &(lw_taskteam.ompt_task_info.frame.exit_runtime_frame);
+                    lw_taskteam.ompt_task_info.function = unwrapped_task;
 
                     __ompt_lw_taskteam_link(&lw_taskteam, master_th);
 
@@ -1862,6 +1882,9 @@ __kmp_fork_call(
                         , exit_runtime_p
 #endif
                     );
+#if OMPT_SUPPORT
+                *exit_runtime_p=0;
+#endif
                 }
 
 #if OMPT_SUPPORT
@@ -6347,6 +6370,9 @@ __kmp_do_serial_initialize( void )
 #if OMPT_SUPPORT
     ompt_pre_init();
 #endif
+#if OMPD_SUPPORT
+    ompd_init();
+#endif
 
     __kmp_validate_locks();
 
@@ -6881,6 +6907,8 @@ __kmp_invoke_task_func( int gtid )
     if (ompt_enabled) {
         exit_runtime_p = &(team->t.t_implicit_task_taskdata[tid].
             ompt_task_info.frame.exit_runtime_frame);
+        team->t.t_implicit_task_taskdata[tid].
+            ompt_task_info.function = team->t.ompt_team_info.microtask;
     } else {
         exit_runtime_p = &dummy;
     }
