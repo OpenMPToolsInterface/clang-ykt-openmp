@@ -31,6 +31,18 @@
 
 #include "../../common/elf_common.c"
 
+#if OMPD_SUPPORT
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* TODO(mjm) - Put these OMPD globals someplace cleaner */
+uint64_t ompd_num_cuda_devices;
+CUcontext* ompd_CudaContextArray;
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+#endif /* OMPD_SUPPORT */
+
 // Utility for retrieving and printing CUDA error string.
 #ifdef CUDA_ERROR_REPORT
 #define CUDA_ERR_STRING(err)                                                   \
@@ -181,6 +193,10 @@ public:
 
     FuncGblEntries.resize(NumberOfDevices);
     Contexts.resize(NumberOfDevices);
+#if OMPD_SUPPORT
+    ompd_num_cuda_devices = (uint64_t)Contexts.size();
+    ompd_CudaContextArray = &Contexts[0];
+#endif /* OMPD_SUPPORT */
     ThreadsPerBlock.resize(NumberOfDevices);
     BlocksPerGrid.resize(NumberOfDevices);
     WarpSize.resize(NumberOfDevices);
@@ -226,6 +242,10 @@ public:
           CUDA_ERR_STRING(err);
         }
       }
+#if OMPD_SUPPORT
+    ompd_num_cuda_devices = (uint64_t)Contexts.size();
+    ompd_CudaContextArray = &Contexts[0];
+#endif /* OMPD_SUPPORT */
   }
 };
 
@@ -367,7 +387,7 @@ __tgt_target_table *__tgt_rtl_load_binary(int32_t device_id,
     return NULL;
   }
 
-  DP("CUDA module successfully loaded!\n");
+  DP("CUDA module successfully loaded! Module=%p\n", cumod);
   DeviceInfo.Modules.push_back(cumod);
 
   // Find the symbols in the module by name.

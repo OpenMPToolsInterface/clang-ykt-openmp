@@ -13,6 +13,7 @@
 
 #include "omptarget-nvptx.h"
 #include "state-queue.h"
+#include "ompd-specific.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // global data tables
@@ -90,6 +91,9 @@ EXTERN void __kmpc_kernel_init(int ThreadLimit,
           threadId);
   currTaskDescr->NThreads() = GetNumberOfWorkersInTeam();
   currTaskDescr->ThreadLimit() = ThreadLimit;
+#ifdef OMPD_SUPPORT
+  ompd_init();
+#endif // OMPD_SUPPORT
 }
 
 EXTERN void __kmpc_kernel_deinit(int16_t IsOMPRuntimeInitialized) {

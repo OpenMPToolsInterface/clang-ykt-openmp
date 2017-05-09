@@ -29,6 +29,7 @@
 #include "debug.h" // debug
 #include "interface.h" // interfaces with omp, compiler, and user
 #include "support.h"
+#include "ompd-specific.h"
 
 #define OMPTARGET_NVPTX_VERSION 1.1
 
@@ -87,6 +88,9 @@ extern __device__ __shared__ DataSharingStateTy DataSharingState;
 // task ICV and (implicit & explicit) task state
 
 class omptarget_nvptx_TaskDescr {
+#if OMPD_SUPPORT
+  friend __device__ void ompd_init( void );
+#endif /* OMPD_SUPPORT */
 public:
   // methods for flags
   INLINE omp_sched_t GetRuntimeSched();
@@ -228,6 +232,9 @@ private:
 // tid refers here to the global thread id
 // do not support multiple concurrent kernel a this time
 class omptarget_nvptx_ThreadPrivateContext {
+#if OMPD_SUPPORT
+  friend __device__ void ompd_init( void );
+#endif /* OMPD_SUPPORT */
 public:
   // task
   INLINE omptarget_nvptx_TaskDescr *Level1TaskDescr(int tid) {

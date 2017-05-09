@@ -50,6 +50,7 @@ if(LIBOMPTARGET_DEP_CUDA_FOUND)
       src/libcall.cu
       src/loop.cu
       src/omptarget-nvptx.cu
+      src/ompd-specific.cu
       src/parallel.cu
       src/reduction.cu
       src/stdio.cu
