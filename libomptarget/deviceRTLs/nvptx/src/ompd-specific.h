@@ -1,4 +1,4 @@
-// TODO(Marty) - Need to make OMPD_SUPPORT configurable in CMAKE
+// TODO(mjm) - Need to make OMPD_SUPPORT configurable in CMAKE
 #define OMPD_SUPPORT 1
 #ifdef OMPD_SUPPORT
 
@@ -10,8 +10,8 @@
 #ifndef __OMPD_SPECIFIC_H__
 #define __OMPD_SPECIFIC_H__
 
-
 __device__ void ompd_init( void );
+
 extern "C" __device__ void ompd_bp_parallel_begin ( void );
 extern "C" __device__ void ompd_bp_parallel_end ( void );
 extern "C" __device__ void ompd_bp_task_begin ( void );
@@ -19,6 +19,9 @@ extern "C" __device__ void ompd_bp_task_end ( void );
 
 #define OMPD_FOREACH_ACCESS(OMPD_ACCESS) \
 OMPD_ACCESS(omptarget_nvptx_ThreadPrivateContext, topTaskDescr)
+
+#define OMPD_FOREACH_ACCESS3(OMPD_ACCESS) \
+OMPD_ACCESS(omptarget_nvptx_TaskDescr, data, items, threadId)
 
 #define OMPD_FOREACH_SIZEOF(OMPD_SIZEOF) \
 OMPD_SIZEOF(omptarget_nvptx_ThreadPrivateContext)\
