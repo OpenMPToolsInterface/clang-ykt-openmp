@@ -93,7 +93,7 @@ else()
     # Unix specific files
     libomp_append(LIBOMP_CXXFILES z_Linux_util.cpp)
     libomp_append(LIBOMP_CXXFILES kmp_gsupport.cpp)
-    libomp_append(LIBOMP_ASMFILES z_Linux_asm.s) # Unix assembly file
+    libomp_append(LIBOMP_ASMFILES z_Linux_asm.S) # Unix assembly file
   endif()
   libomp_append(LIBOMP_CFILES thirdparty/ittnotify/ittnotify_static.c LIBOMP_USE_ITT_NOTIFY)
   libomp_append(LIBOMP_CXXFILES kmp_debugger.cpp LIBOMP_USE_DEBUGGER)
@@ -266,7 +266,7 @@ endif()
 # which be examined as needed.
 libomp_get_cflags(OMPD_SYMBOLS_CFLAGS)
 get_property(ompd_symbols_inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
-message("OMPD_SYMBOLS_INC_DIRS == ${ompd_symbols_inc_dirs}")
+# message("OMPD_SYMBOLS_INC_DIRS == ${ompd_symbols_inc_dirs}")
 foreach(d ${ompd_symbols_inc_dirs})
   set(OMPD_SYMBOLS_CFLAGS "${OMPD_SYMBOLS_CFLAGS} -I${d}")
 endforeach()
